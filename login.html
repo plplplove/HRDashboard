@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>HR Logowanie</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('error')) {
+                alert('Nieprawidłowy login lub hasło');
+            }
+        }
+    </script>
+</head>
+<body>
+    <form method="POST" action="Login.php">
+        <h2>Formularz logowania</h2>
+        <input type="text" name="username" placeholder="Wprowadź login" required/>
+        <input type="password" name="password" placeholder="Wprowadź hasło" required/>
+        <button type="submit">Zaloguj się</button>
+    </form>
+</body>
+</html>
