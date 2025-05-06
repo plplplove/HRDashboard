@@ -5,7 +5,6 @@ if (!isset($_SESSION['user'])) {
     exit(json_encode(["success" => false, "message" => "Brak dostępu"]));
 }
 
-// Database connection
 $host = 'localhost';
 $db = 'HRDASHBOARD';
 $user = 'root';
@@ -17,7 +16,6 @@ if ($conn->connect_error) {
     exit(json_encode(["success" => false, "message" => "Błąd połączenia z bazą danych"]));
 }
 
-// Get employees sorted by last name and first name
 $sql = "SELECT id, imie, nazwisko, dzial FROM pracownicy ORDER BY nazwisko, imie";
 $result = $conn->query($sql);
 
@@ -28,7 +26,6 @@ if ($result && $result->num_rows > 0) {
     }
 }
 
-// Return as JSON
 header('Content-Type: application/json');
 echo json_encode($employees);
 

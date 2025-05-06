@@ -10,7 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET' || !isset($_GET['id'])) {
     exit('Nieprawidłowe żądanie');
 }
 
-// Database connection
 $host = 'localhost';
 $db = 'HRDASHBOARD';
 $user = 'root';
@@ -24,7 +23,6 @@ if ($conn->connect_error) {
 
 $id = intval($_GET['id']);
 
-// Fetch schedule entry
 $sql = "SELECT * FROM grafik_pracy WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $id);
@@ -32,7 +30,6 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($row = $result->fetch_assoc()) {
-    // Return as JSON
     header('Content-Type: application/json');
     echo json_encode($row);
 } else {

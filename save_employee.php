@@ -10,7 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Metoda niedozwolona');
 }
 
-// Połączenie z bazą danych
 $host = 'localhost';
 $db = 'HRDASHBOARD';
 $user = 'root';
@@ -22,7 +21,6 @@ if ($conn->connect_error) {
     exit('Błąd połączenia z bazą danych');
 }
 
-// Pobierz dane z formularza
 $imie = isset($_POST['imie']) ? $conn->real_escape_string(trim($_POST['imie'])) : '';
 $nazwisko = isset($_POST['nazwisko']) ? $conn->real_escape_string(trim($_POST['nazwisko'])) : '';
 $dzial = isset($_POST['dzial']) ? $conn->real_escape_string(trim($_POST['dzial'])) : '';
@@ -31,13 +29,11 @@ $telefon = isset($_POST['telefon']) ? $conn->real_escape_string(trim($_POST['tel
 $email = isset($_POST['email']) ? $conn->real_escape_string(trim($_POST['email'])) : '';
 $urlop = isset($_POST['urlop']) ? 1 : 0;
 
-// Walidacja danych
 if (empty($imie) || empty($nazwisko) || empty($dzial) || empty($stanowisko)) {
     http_response_code(400);
     exit('Wypełnij wszystkie wymagane pola');
 }
 
-// Zapis do bazy danych
 $sql = "INSERT INTO pracownicy (imie, nazwisko, dzial, stanowisko, telefon, email, urlop) 
         VALUES (?, ?, ?, ?, ?, ?, ?)";
 
