@@ -3,8 +3,6 @@
 ## Overview
 HR Dashboard is a comprehensive web-based Human Resources Management System designed to streamline employee management, time tracking, and leave management processes. The system provides a user-friendly interface for HR personnel to efficiently manage employee data, work schedules, and leave requests.
 
-![Dashboard Screenshot](screenshots/dashboard.png)
-
 ## Features
 
 ### Employee Management
@@ -137,15 +135,6 @@ HRDashboard/
 - Toggle between light and dark themes using the sun/moon icon in the header
 - Modify CSS files to change the appearance
 - Edit PHP files to adjust functionality
-
-## Screenshots
-- Dashboard: `screenshots/dashboard.png`
-- Employee Management: `screenshots/employees.png`
-- Time Management: `screenshots/time_management.png`
-- Leave Management: `screenshots/leave_management.png`
-
-## License
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Credits
 - Font Awesome for icons
