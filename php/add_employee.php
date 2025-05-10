@@ -105,6 +105,6 @@ if ($isAjax) {
     exit();
 }
 
-header("Location: manage_employees.php");
+header("Location: ../manage_employees.php");
 exit();
 ?>

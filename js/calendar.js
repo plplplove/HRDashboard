@@ -1,27 +1,20 @@
-// Calendar and Time Management JavaScript Functions
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize calendar functionality, but don't show modal
     setupMonthNavigation();
     setupCalendarDayEvents();
     loadEmployeeSchedules();
     
-    // Make sure modal is hidden
     const modal = document.getElementById('editScheduleModal');
     if (modal) {
         modal.style.display = 'none';
     }
 
-    // Connect the Add Schedule button - ONLY wire up the click handler, don't show modal yet
     const addScheduleBtn = document.getElementById('addScheduleBtn');
     if (addScheduleBtn) {
-        // Remove any existing handlers first
         const newAddBtn = addScheduleBtn.cloneNode(true);
         addScheduleBtn.parentNode.replaceChild(newAddBtn, addScheduleBtn);
         newAddBtn.addEventListener('click', showAddScheduleModal);
     }
     
-    // Make sure modals are hidden initially
     const addModal = document.getElementById('addScheduleModal');
     if (addModal) {
         addModal.style.display = 'none';
@@ -38,7 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Setup month navigation (prev/next month)
 function setupMonthNavigation() {
     const prevMonthBtn = document.getElementById('prevMonth');
     const nextMonthBtn = document.getElementById('nextMonth');
@@ -72,61 +64,45 @@ function setupMonthNavigation() {
     });
     
     function updateMonthDisplay() {
-        // Update hidden inputs
         monthInput.value = currentMonth;
         yearInput.value = currentYear;
         
-        // Ensure the day is valid for the new month
         const daysInNewMonth = new Date(currentYear, currentMonth, 0).getDate();
         if (currentDay > daysInNewMonth) {
             currentDay = daysInNewMonth;
             dayInput.value = currentDay;
         }
         
-        // Update the date display with month and year
         const date = new Date(currentYear, currentMonth - 1, 1);
         const options = { month: 'long', year: 'numeric' };
         currentDateDisplay.textContent = date.toLocaleDateString('pl-PL', options);
         
-        // Reload the page with new month/year but preserve the day
         window.location.href = `manage_time.php?month=${currentMonth}&year=${currentYear}&day=${currentDay}`;
     }
 }
 
-// Keep the original setupCalendarDayEvents function to maintain the right panel functionality
 function setupCalendarDayEvents() {
     const calendarDays = document.querySelectorAll('.calendar-day:not(.empty)');
     calendarDays.forEach(day => {
         day.addEventListener('click', function() {
-            // Remove selected class from all days
             document.querySelectorAll('.calendar-day').forEach(d => {
                 d.classList.remove('selected');
             });
-            
-            // Add selected class to clicked day
+
             this.classList.add('selected');
-            
-            // Get selected date
             const selectedDate = this.getAttribute('data-date');
             if (!selectedDate) return;
-            
-            // Update form inputs but keep the month and year the same
             const date = new Date(selectedDate);
             document.getElementById('dayInput').value = date.getDate();
-            
-            // Update display for the right side panel
             if (document.getElementById('selectedDateDisplay')) {
                 const options = { day: 'numeric', month: 'long', year: 'numeric' };
                 document.getElementById('selectedDateDisplay').textContent = date.toLocaleDateString('pl-PL', options);
             }
-            
-            // Load employee schedules for the selected day to display in right panel
             loadEmployeeSchedules();
         });
     });
 }
 
-// Load employee schedules for a selected date
 function loadEmployeeSchedules() {
     const dayInput = document.getElementById('dayInput');
     const monthInput = document.getElementById('monthInput');
@@ -135,7 +111,6 @@ function loadEmployeeSchedules() {
     
     const date = `${yearInput.value}-${monthInput.value.padStart(2, '0')}-${dayInput.value.padStart(2, '0')}`;
     
-    // Show loading spinner
     employeeScheduleList.innerHTML = `
         <tr>
             <td colspan="7" class="text-center">
@@ -145,8 +120,7 @@ function loadEmployeeSchedules() {
             </td>
         </tr>
     `;
-    
-    // Make AJAX request to get employee schedules (without department filter)
+
     fetch(`manage_time.php?action=getEmployeesByDate&date=${date}&_=${Date.now()}`, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
@@ -208,11 +182,7 @@ function loadEmployeeSchedules() {
         });
         
         employeeScheduleList.innerHTML = output;
-        
-        // Add event listeners to the new action buttons
         setupScheduleActionButtons();
-        
-        // Update summary information
         updateSummary(totalHours, totalEmployees, present, absent);
     })
     .catch(error => {
@@ -228,7 +198,6 @@ function loadEmployeeSchedules() {
     });
 }
 
-// Update summary section with calculated values
 function updateSummary(hours, total, present, absent) {
     document.getElementById('totalHours').textContent = hours + 'h';
     document.getElementById('totalEmployees').textContent = total;
@@ -236,20 +205,7 @@ function updateSummary(hours, total, present, absent) {
     document.getElementById('absentEmployees').textContent = absent;
 }
 
-// Set up schedule management buttons
-function setupScheduleButtons() {
-    const addScheduleBtn = document.getElementById('addScheduleBtn');
-    if (addScheduleBtn) {
-        addScheduleBtn.addEventListener('click', function() {
-            // In a real application, this would open a modal to add a new schedule entry
-            alert('Dodaj nowy wpis do grafiku - ta funkcja będzie dostępna wkrótce.');
-        });
-    }
-}
-
-// Set up action buttons for each employee schedule entry
 function setupScheduleActionButtons() {
-    // Edit buttons
     document.querySelectorAll('.edit-schedule').forEach(btn => {
         btn.addEventListener('click', function() {
             const scheduleId = this.getAttribute('data-id');
@@ -257,7 +213,6 @@ function setupScheduleActionButtons() {
         });
     });
     
-    // Delete buttons - add event listeners to show confirmation dialog
     document.querySelectorAll('.delete-schedule').forEach(btn => {
         btn.addEventListener('click', function() {
             const scheduleId = this.getAttribute('data-id');
@@ -266,10 +221,8 @@ function setupScheduleActionButtons() {
     });
 }
 
-// Variables to store the ID of the schedule to delete
 let scheduleToDelete = null;
 
-// Function to show delete confirmation modal
 function showDeleteScheduleModal(scheduleId) {
     scheduleToDelete = scheduleId;
     const modal = document.getElementById('deleteScheduleModal');
@@ -279,39 +232,40 @@ function showDeleteScheduleModal(scheduleId) {
         setupDeleteScheduleModalEvents();
     }
 }
-
-// Set up event listeners for the delete confirmation modal
 function setupDeleteScheduleModalEvents() {
-    // Close button (X)
     const closeBtn = document.getElementById('closeDeleteScheduleModal');
     if (closeBtn) {
         closeBtn.onclick = closeDeleteScheduleModal;
     }
-    
-    // Cancel button
+
     const cancelBtn = document.getElementById('cancelDeleteScheduleBtn');
     if (cancelBtn) {
         cancelBtn.onclick = closeDeleteScheduleModal;
     }
-    
-    // Confirm delete button
+
     const confirmBtn = document.getElementById('confirmDeleteScheduleBtn');
     if (confirmBtn) {
         confirmBtn.onclick = confirmDeleteSchedule;
     }
-    
-    // Close when clicking outside
+
     const modal = document.getElementById('deleteScheduleModal');
     if (modal) {
+        const modalContent = modal.querySelector('.modal-content');
+        
         modal.onclick = function(e) {
             if (e.target === modal) {
                 closeDeleteScheduleModal();
             }
         };
+
+        if (modalContent) {
+            modalContent.onclick = function(e) {
+                e.stopPropagation();
+            };
+        }
     }
 }
 
-// Function to close delete modal
 function closeDeleteScheduleModal() {
     const modal = document.getElementById('deleteScheduleModal');
     if (modal) {
@@ -321,7 +275,6 @@ function closeDeleteScheduleModal() {
     scheduleToDelete = null;
 }
 
-// Function to confirm and process schedule deletion - improved with better reliability
 function confirmDeleteSchedule() {
     if (!scheduleToDelete) {
         alert('Błąd: Nie znaleziono ID harmonogramu do usunięcia.');
@@ -329,9 +282,6 @@ function confirmDeleteSchedule() {
         return;
     }
     
-    console.log("Attempting to delete schedule ID:", scheduleToDelete);
-    
-    // Show loading state
     document.body.style.cursor = 'wait';
     const confirmBtn = document.getElementById('confirmDeleteScheduleBtn');
     if (confirmBtn) {
@@ -339,24 +289,24 @@ function confirmDeleteSchedule() {
         confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Usuwanie...';
     }
     
-    // Send delete request
-    fetch(`delete_schedule.php?id=${scheduleToDelete}`, {
+    fetch('php/delete_schedule.php?id='+scheduleToDelete, {
         method: 'GET',
-        cache: 'no-cache' // Prevent caching
+        cache: 'no-cache' 
     })
     .then(response => {
-        console.log("Delete response status:", response.status);
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
         return response.text().then(text => {
             try {
                 return JSON.parse(text);
             } catch(e) {
                 console.error("Error parsing JSON:", text);
-                throw new Error("Invalid server response");
+                throw new Error("Invalid server response: " + text.substring(0, 100));
             }
         });
     })
     .then(data => {
-        console.log("Delete response:", data);
         closeDeleteScheduleModal();
         
         if (data.success) {
@@ -364,13 +314,11 @@ function confirmDeleteSchedule() {
         } else {
             alert(data.message || 'Wystąpił błąd podczas usuwania harmonogramu.');
         }
-        
-        // Always reload the data
         loadEmployeeSchedules();
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Wystąpił błąd: ' + error.message);
+        alert('Wystąpił błąd podczas usuwania: ' + error.message);
     })
     .finally(() => {
         document.body.style.cursor = 'default';
@@ -381,33 +329,24 @@ function confirmDeleteSchedule() {
     });
 }
 
-// Function to load edit modal with schedule data (only called when clicking edit button)
 function loadEditScheduleModal(scheduleId) {
-    // Show loading indicator
     document.body.style.cursor = 'wait';
     
-    console.log("Loading schedule data for ID:", scheduleId);
-    
-    // Fetch schedule data
-    fetch(`get_schedule.php?id=${scheduleId}`)
+    fetch('php/get_schedule.php?id='+scheduleId)
     .then(response => {
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
         }
         return response.json();
     })
     .then(data => {
-        console.log("Received schedule data:", data);
         
-        // Populate form with fetched data
         document.getElementById('scheduleId').value = data.id;
         document.getElementById('startTime').value = data.godzina_rozpoczecia.substring(0, 5);
         document.getElementById('endTime').value = data.godzina_zakonczenia.substring(0, 5);
         
-        // Map database status values to form status values
-        let formStatus = 'present'; // Default value
+        let formStatus = 'present'; 
         
-        // Map database status values to form select options
         switch (data.status) {
             case 'obecny':
                 formStatus = 'present';
@@ -419,31 +358,26 @@ function loadEditScheduleModal(scheduleId) {
                 formStatus = 'vacation';
                 break;
             default:
-                formStatus = data.status; // Use original if no mapping needed
+                formStatus = data.status; 
         }
         
-        // Set the dropdown to the correct value
         document.getElementById('status').value = formStatus;
         
-        // Show modal
         const modal = document.getElementById('editScheduleModal');
         modal.style.display = 'flex';
         document.body.classList.add('modal-open');
         
-        // Setup modal buttons
         setupEditModalEvents();
         
-        // Reset cursor
         document.body.style.cursor = 'default';
     })
     .catch(error => {
         console.error('Error fetching schedule data:', error);
-        alert('Wystąpił błąd podczas pobierania danych harmonogramu.');
+        alert('Wystąpił błąd podczas pobierania danych harmonogramu: ' + error.message);
         document.body.style.cursor = 'default';
     });
 }
 
-// Function to close edit modal
 function closeEditScheduleModal() {
     const modal = document.getElementById('editScheduleModal');
     if (modal) {
@@ -452,78 +386,66 @@ function closeEditScheduleModal() {
     }
 }
 
-// Function to set up the modal event listeners
 function setupEditModalEvents() {
-    // Close button (X)
     const closeBtn = document.getElementById('closeEditScheduleModal');
     if (closeBtn) {
         closeBtn.onclick = closeEditScheduleModal;
     }
     
-    // Cancel button
     const cancelBtn = document.getElementById('cancelScheduleBtn');
     if (cancelBtn) {
         cancelBtn.onclick = closeEditScheduleModal;
     }
     
-    // Save button - explicitly set onclick
     const saveBtn = document.getElementById('saveScheduleBtn');
     if (saveBtn) {
         saveBtn.onclick = saveScheduleChanges;
     }
     
-    // Close when clicking outside
     const modal = document.getElementById('editScheduleModal');
+    const modalContent = modal.querySelector('.modal-content');
+    
     if (modal) {
         modal.onclick = function(e) {
             if (e.target === modal) {
                 closeEditScheduleModal();
             }
         };
+        
+        if (modalContent) {
+            modalContent.onclick = function(e) {
+                e.stopPropagation();
+            };
+        }
     }
 }
 
-// Function to save schedule changes when "Save Changes" button is clicked
 function saveScheduleChanges() {
-    // Get form data
     const form = document.getElementById('editScheduleForm');
     
-    // Basic validation
     const scheduleId = document.getElementById('scheduleId').value;
     const startTime = document.getElementById('startTime').value;
     const endTime = document.getElementById('endTime').value;
     const status = document.getElementById('status').value;
-    
-    console.log("Saving schedule:", {id: scheduleId, start: startTime, end: endTime, status: status});
     
     if (!scheduleId || !startTime || !endTime || !status) {
         alert('Proszę wypełnić wszystkie wymagane pola.');
         return;
     }
     
-    // Show loading state
     document.body.style.cursor = 'wait';
     
-    // Prepare form data manually to ensure correct values
     const formData = new FormData();
     formData.append('id', scheduleId);
     formData.append('godzina_rozpoczecia', startTime);
     formData.append('godzina_zakonczenia', endTime);
     formData.append('status', status);
     
-    // Debug log the data being sent
-    console.log("Form data being sent:");
-    for (let pair of formData.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
-    }
-    
-    // Send AJAX request
-    fetch('update_schedule.php', {
+    fetch('php/update_schedule.php', {
         method: 'POST',
         body: formData
     })
     .then(response => {
-        console.log("Response status:", response.status);
         if (!response.ok) {
             return response.text().then(text => {
                 throw new Error(`Server error (${response.status}): ${text}`);
@@ -532,7 +454,6 @@ function saveScheduleChanges() {
         return response.json();
     })
     .then(data => {
-        console.log("Server response:", data);
         if (data.success) {
             alert(data.message || 'Harmonogram został zaktualizowany pomyślnie!');
             closeEditScheduleModal();
@@ -550,9 +471,7 @@ function saveScheduleChanges() {
     });
 }
 
-// Add Schedule Modal functionality - opens only when clicking the Add button
 function showAddScheduleModal() {
-    // Set the current selected date
     const dayInput = document.getElementById('dayInput');
     const monthInput = document.getElementById('monthInput');
     const yearInput = document.getElementById('yearInput');
@@ -560,26 +479,26 @@ function showAddScheduleModal() {
     
     document.getElementById('selectedDate').value = selectedDate;
     
-    // Load employees for the dropdown
     loadEmployeesForDropdown();
     
-    // Show modal
     const modal = document.getElementById('addScheduleModal');
     modal.style.display = 'flex';
     document.body.classList.add('modal-open');
     
-    // Set up event listeners
     setupAddModalEvents();
 }
 
 function loadEmployeesForDropdown() {
-    // Show loading in the dropdown
     const employeeSelect = document.getElementById('employeeSelect');
     employeeSelect.innerHTML = '<option value="">Loading...</option>';
     
-    // Fetch employees from server
-    fetch('get_employees.php')
-        .then(response => response.json())
+    fetch('php/get_employees.php')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             let options = '<option value="">Wybierz pracownika</option>';
             data.forEach(employee => {
@@ -587,12 +506,12 @@ function loadEmployeesForDropdown() {
             });
             employeeSelect.innerHTML = options;
             
-            // Add change event to update department
             employeeSelect.addEventListener('change', updateDepartment);
         })
         .catch(error => {
             console.error('Error loading employees:', error);
-            employeeSelect.innerHTML = '<option value="">Error loading employees</option>';
+            employeeSelect.innerHTML = '<option value="">Błąd podczas wczytywania pracowników</option>';
+            alert('Nie udało się załadować listy pracowników: ' + error.message);
         });
 }
 
@@ -608,91 +527,109 @@ function updateDepartment() {
     }
 }
 
-// Improved modal event setup function with proper closing
 function setupAddModalEvents() {
-    // Close button (X) - ensure it works
-    const closeBtn = document.getElementById('closeAddScheduleModal');
-    if (closeBtn) {
-        // Replace any existing handler to avoid duplicates
-        const newCloseBtn = closeBtn.cloneNode(true);
-        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-        newCloseBtn.addEventListener('click', closeAddScheduleModal);
-    }
-    
-    // Cancel button - ensure it works
-    const cancelBtn = document.getElementById('cancelAddScheduleBtn');
-    if (cancelBtn) {
-        // Replace any existing handler to avoid duplicates
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-        newCancelBtn.addEventListener('click', closeAddScheduleModal);
-    }
-    
-    // Save button
-    const saveBtn = document.getElementById('saveAddScheduleBtn');
-    if (saveBtn) {
-        // Replace any existing handler to avoid duplicates
-        const newSaveBtn = saveBtn.cloneNode(true);
-        saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-        newSaveBtn.addEventListener('click', saveAddSchedule);
-    }
-    
-    // Close when clicking outside the modal
     const modal = document.getElementById('addScheduleModal');
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeAddScheduleModal();
-            }
+    const modalContent = modal.querySelector('.modal-content');
+    
+    const closeBtn = document.getElementById('closeAddScheduleModal');
+    const cancelBtn = document.getElementById('cancelAddScheduleBtn');
+    const saveBtn = document.getElementById('saveAddScheduleBtn');
+    
+    document.querySelectorAll('#closeAddScheduleModal, #cancelAddScheduleBtn, #saveAddScheduleBtn').forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+    });
+    
+    const closeButton = document.getElementById('closeAddScheduleModal');
+    const cancelButton = document.getElementById('cancelAddScheduleBtn');
+    const saveButton = document.getElementById('saveAddScheduleBtn');
+    
+    if (closeButton) {
+        closeButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeAddScheduleModal();
+        });
+    }
+    
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeAddScheduleModal();
+        });
+    }
+    
+    if (saveButton) {
+        saveButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            this.disabled = true;
+            
+            saveAddSchedule();
+        });
+    }
+    
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeAddScheduleModal();
+        }
+    });
+    if (modalContent) {
+        modalContent.addEventListener('click', function(e) {
+            e.stopPropagation();
         });
     }
 }
 
-// Properly close the add schedule modal
 function closeAddScheduleModal() {
     const modal = document.getElementById('addScheduleModal');
     if (modal) {
         modal.style.display = 'none';
         document.body.classList.remove('modal-open');
         
-        // Reset form fields
         const form = document.getElementById('addScheduleForm');
         if (form) form.reset();
         
-        // Reset department display
         const deptDisplay = document.getElementById('departmentDisplay');
         if (deptDisplay) deptDisplay.value = '';
+        
+        const saveBtn = document.getElementById('saveAddScheduleBtn');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Zapisz';
+        }
     }
 }
 
 function saveAddSchedule() {
-    // Get form data
+    
     const form = document.getElementById('addScheduleForm');
     
-    // Validate form
     const employeeId = document.getElementById('employeeSelect').value;
     const startTime = document.getElementById('addStartTime').value;
     const endTime = document.getElementById('addEndTime').value;
     const status = document.getElementById('addStatus').value;
     
-    // Basic validation
     if (!employeeId) {
         alert('Proszę wybrać pracownika.');
+        enableSaveButton();
         return;
     }
     
     if (!startTime || !endTime) {
         alert('Proszę wprowadzić godziny rozpoczęcia i zakończenia.');
+        enableSaveButton();
         return;
     }
-    
-    // Check if end time is after start time (only for present status)
+
     if (status === 'present' && startTime >= endTime) {
         alert('Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia.');
+        enableSaveButton();
         return;
     }
     
-    // Show loading state
     document.body.style.cursor = 'wait';
     const saveBtn = document.getElementById('saveAddScheduleBtn');
     if (saveBtn) {
@@ -700,40 +637,61 @@ function saveAddSchedule() {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Zapisywanie...';
     }
     
-    // Create form data for submission
     const formData = new FormData(form);
     
-    // Send AJAX request
-    fetch('add_schedule.php', {
+    fetch('php/add_schedule.php', {
         method: 'POST',
         body: formData
     })
     .then(response => {
-        if (!response.ok) {
-            return response.json().then(data => {
-                throw new Error(data.message || 'Server error');
-            });
-        }
-        return response.json();
+        
+        return response.text().then(text => {
+
+            try {
+                const data = JSON.parse(text);
+                return {
+                    ok: response.ok,
+                    data: data
+                };
+            } catch (e) {
+                console.error("Failed to parse JSON:", e);
+                return {
+                    ok: false,
+                    data: { success: false, message: "Invalid server response: " + text.substring(0, 50) }
+                };
+            }
+        });
     })
-    .then(data => {
-        if (data.success) {
-            alert(data.message || 'Harmonogram został dodany pomyślnie!');
+    .then(result => {
+        if (result.ok && result.data.success) {
+
+            alert(result.data.message || 'Harmonogram został dodany pomyślnie!');
             closeAddScheduleModal();
-            loadEmployeeSchedules(); // Refresh the schedule view
+            loadEmployeeSchedules(); 
         } else {
-            alert(data.message || 'Wystąpił błąd podczas dodawania harmonogramu.');
+            console.error("Save failed:", result.data);
+            alert('Wystąpił błąd podczas przetwarzania odpowiedzi serwera. Proszę odświeżyć stronę, aby sprawdzić, czy dane zostały zapisane.');
+            closeAddScheduleModal();
+            loadEmployeeSchedules(); 
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Wystąpił błąd: ' + error.message);
+        console.error('Network error:', error);
+        alert('Wystąpił błąd sieciowy: ' + error.message + '\nProszę odświeżyć stronę, aby sprawdzić, czy dane zostały zapisane.');
+        closeAddScheduleModal();
+        loadEmployeeSchedules(); 
     })
     .finally(() => {
         document.body.style.cursor = 'default';
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Zapisz';
-        }
+        enableSaveButton();
     });
 }
+
+function enableSaveButton() {
+    const saveBtn = document.getElementById('saveAddScheduleBtn');
+    if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Zapisz';
+    }
+}
+

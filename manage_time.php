@@ -9,77 +9,50 @@ $host = 'localhost';
 $db = 'HRDASHBOARD';
 $user = 'root';
 $pass = '';
-
 $conn = new mysqli($host, $user, $pass, $db);
-
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$deptQuery = "SELECT DISTINCT dzial FROM pracownicy ORDER BY dzial";
-$departments = $conn->query($deptQuery);
+$departments = $conn->query("SELECT DISTINCT dzial FROM pracownicy ORDER BY dzial");
+$employees = $conn->query("SELECT id, imie, nazwisko FROM pracownicy ORDER BY nazwisko, imie");
 
-$employeesQuery = "SELECT id, imie, nazwisko FROM pracownicy ORDER BY nazwisko, imie";
-$employees = $conn->query($employeesQuery);
-
-$selectedMonth = isset($_GET['month']) ? intval($_GET['month']) : intval(date('m'));
-$selectedYear = isset($_GET['year']) ? intval($_GET['year']) : intval(date('Y'));
-$selectedDay = isset($_GET['day']) ? intval($_GET['day']) : intval(date('d'));
-$selectedEmployee = isset($_GET['employee']) ? intval($_GET['employee']) : 0;
-$selectedDept = isset($_GET['department']) ? $_GET['department'] : '';
-
+$selectedMonth = $_GET['month'] ?? date('m');
+$selectedYear = $_GET['year'] ?? date('Y');
+$selectedDay = $_GET['day'] ?? date('d');
 $selectedDate = sprintf('%04d-%02d-%02d', $selectedYear, $selectedMonth, $selectedDay);
-$monthName = date('F', mktime(0, 0, 0, $selectedMonth, 1, $selectedYear));
-$daysInMonth = date('t', mktime(0, 0, 0, $selectedMonth, 1, $selectedYear));
-$firstDayOfMonth = date('N', mktime(0, 0, 0, $selectedMonth, 1, $selectedYear));
+$daysInMonth = date('t', strtotime($selectedDate));
+$firstDayOfMonth = date('N', strtotime("$selectedYear-$selectedMonth-01"));
 
 $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate') {
-    $date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
-    
-    $employeeSchedules = [];
-    
-    $sql = "SELECT g.id AS schedule_id, p.id, p.imie, p.nazwisko, p.dzial, g.godzina_rozpoczecia, g.godzina_zakonczenia, 
-                   g.status, TIMEDIFF(g.godzina_zakonczenia, g.godzina_rozpoczecia) AS czas_pracy
-            FROM grafik_pracy g
-            INNER JOIN pracownicy p ON g.pracownik_id = p.id
-            WHERE g.data = ?";
-    
-    $sql .= " ORDER BY p.nazwisko, p.imie";
-    
-    $stmt = $conn->prepare($sql);
+if ($isAjax && $_GET['action'] === 'getEmployeesByDate') {
+    $date = $_GET['date'] ?? date('Y-m-d');
+    $stmt = $conn->prepare("SELECT g.id AS schedule_id, p.id, p.imie, p.nazwisko, p.dzial,
+        g.godzina_rozpoczecia, g.godzina_zakonczenia, g.status,
+        TIMEDIFF(g.godzina_zakonczenia, g.godzina_rozpoczecia) AS czas_pracy
+        FROM grafik_pracy g
+        INNER JOIN pracownicy p ON g.pracownik_id = p.id
+        WHERE g.data = ? ORDER BY p.nazwisko, p.imie");
     $stmt->bind_param("s", $date);
-    
     $stmt->execute();
     $result = $stmt->get_result();
-    
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            // Convert time difference to hours format
-            $hours = '0h';
-            if ($row['status'] != 'leave') {
-                $timeParts = explode(':', $row['czas_pracy']);
-                $hours = $timeParts[0] . 'h';
-                if ($timeParts[1] != '00') {
-                    $hours .= $timeParts[1] . 'm';
-                }
-            }
-            
-            $employeeSchedules[] = [
-                'id' => $row['id'],
-                'schedule_id' => $row['schedule_id'], // Include schedule_id
-                'name' => $row['nazwisko'] . ' ' . $row['imie'],
-                'department' => $row['dzial'],
-                'start_time' => $row['status'] == 'leave' ? '00:00' : substr($row['godzina_rozpoczecia'], 0, 5),
-                'end_time' => $row['status'] == 'leave' ? '00:00' : substr($row['godzina_zakonczenia'], 0, 5),
-                'hours' => $hours,
-                'status' => $row['status']
-            ];
-        }
+    $data = [];
+    while ($row = $result->fetch_assoc()) {
+        $czas = ($row['status'] !== 'leave') ? explode(':', $row['czas_pracy']) : [0, 0];
+        $godziny = ($row['status'] !== 'leave') ? $czas[0] . 'h' . ($czas[1] !== '00' ? $czas[1] . 'm' : '') : '0h';
+        $data[] = [
+            'id' => $row['id'],
+            'schedule_id' => $row['schedule_id'],
+            'name' => $row['nazwisko'] . ' ' . $row['imie'],
+            'department' => $row['dzial'],
+            'start_time' => $row['status'] === 'leave' ? '00:00' : substr($row['godzina_rozpoczecia'], 0, 5),
+            'end_time' => $row['status'] === 'leave' ? '00:00' : substr($row['godzina_zakonczenia'], 0, 5),
+            'hours' => $godziny,
+            'status' => $row['status']
+        ];
     }
-    
     header('Content-Type: application/json');
-    echo json_encode($employeeSchedules);
+    echo json_encode($data);
     exit;
 }
 ?>
@@ -89,67 +62,45 @@ if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate
 <head>
     <meta charset="UTF-8">
     <title>System HR - Zarządzanie czasem pracy</title>
-    <link rel="stylesheet" href="css/dashboard.css">
-    <link rel="stylesheet" href="css/forms.css">
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/forms-modals.css">
     <link rel="stylesheet" href="css/time_management.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body class="theme-light">
     <div class="dashboard-container">
-        <div class="sidebar">
-            <div class="logo">
-                <h2>HR System</h2>
-            </div>
-            <div class="menu">
-                <a href="dashboard.php" class="menu-item">
-                    <i class="fas fa-home"></i>
-                    <span>Strona główna</span>
-                </a>
-                <a href="manage_employees.php" class="menu-item">
-                    <i class="fas fa-users"></i>
-                    <span>Zarządzaj pracownikami</span>
-                </a>
-                <a href="manage_time.php" class="menu-item active">
-                    <i class="fas fa-clock"></i>
-                    <span>Zarządzaj czasem pracy</span>
-                </a>
-                <a href="manage_leave.php" class="menu-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Wnioski urlopowe</span>
-                </a>
-            </div>
-        </div>
+    <aside class="sidebar">
+        <div class="logo"><h2>HR System</h2></div>
+        <nav class="menu">
+            <a href="dashboard.php" class="menu-item"><i class="fas fa-home"></i><span>Strona główna</span></a>
+            <a href="manage_employees.php" class="menu-item"><i class="fas fa-users"></i><span>Zarządzaj pracownikami</span></a>
+            <a href="manage_time.php" class="menu-item active"><i class="fas fa-clock"></i><span>Zarządzaj czasem pracy</span></a>
+            <a href="manage_leave.php" class="menu-item"><i class="fas fa-calendar-alt"></i><span>Wnioski urlopowe</span></a>
+        </nav>
+    </aside>
         <div class="main-content">
-            <div class="header">
-                <div class="page-title">
-                    <h1>Zarządzanie czasem pracy</h1>
-                </div>
-                <div class="user-info">
-                    <button class="theme-toggle" id="themeToggle" title="Przełącz motyw">
-                        <i class="fas fa-sun"></i>
-                    </button>
-                    <span class="user-name" id="userNameDropdown"><?= htmlspecialchars($_SESSION['user']) ?></span>
-                    <div class="user-dropdown" id="userDropdown">
-                        <button type="button" id="changePasswordBtn">
-                            <i class="fas fa-key"></i> Zmień hasło
-                        </button>
-                        <a href="logout.php">
-                            <i class="fas fa-sign-out-alt"></i> Wyloguj się
-                        </a>
-                    </div>
+        <header class="header">
+            <h1 class="welcome-message">Zarządzaj grafikami pracy</h1>
+            <div class="user-info">
+                <div class="user-box" id="userToggle">
+                    <i class="fas fa-sun theme-icon" id="themeIcon"></i>
+                    <span class="user-name"> <?= htmlspecialchars($_SESSION['user']) ?> </span>
+                    <i class="fas fa-chevron-down dropdown-icon" id="dropdownToggle"></i>
                     <div class="avatar">
                         <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Avatar">
                     </div>
                 </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href='php/logout.php'><i class="fas fa-sign-out-alt"></i> Wyloguj się</a>
+                </div>
             </div>
+        </header>
             <div class="time-management-container">
                 <!-- Calendar View -->
                 <div class="calendar-container">
                     <div class="calendar-wrapper">
                         <h3 class="calendar-section-title">Wybierz datę, aby zobaczyć harmonogram</h3>
-                        
-                        <!-- Month selector moved here exclusively -->
                         <div class="filter-group date-navigation">
                             <div class="date-picker">
                                 <button type="button" class="btn btn-icon" id="prevMonth">
@@ -179,7 +130,6 @@ if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate
                             </div>
                             <div class="calendar-days">
                                 <?php
-                                // Add empty cells for the days before the first day of the month
                                 for ($i = 1; $i < $firstDayOfMonth; $i++) {
                                     echo '<div class="calendar-day empty"></div>';
                                 }
@@ -188,7 +138,7 @@ if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate
                                     $dateYmd = sprintf('%04d-%02d-%02d', $selectedYear, $selectedMonth, $day);
                                     $isToday = ($day == date('j') && $selectedMonth == date('m') && $selectedYear == date('Y'));
                                     $isSelected = ($day == $selectedDay);
-                                    $isWeekend = date('N', strtotime($dateYmd)) >= 6; // 6 = Saturday, 7 = Sunday
+                                    $isWeekend = date('N', strtotime($dateYmd)) >= 6;
                                     $dayClass = 'calendar-day';
                                     if ($isToday) $dayClass .= ' today';
                                     if ($isSelected) $dayClass .= ' selected';
@@ -233,7 +183,6 @@ if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate
                                     </tr>
                                 </thead>
                                 <tbody id="employeeScheduleList">
-                                    <!-- Employee schedules will be loaded dynamically via JavaScript -->
                                     <tr>
                                         <td colspan="7" class="text-center">
                                             <div class="spinner">
@@ -268,7 +217,6 @@ if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate
         </div>
     </div>
     
-    <!-- Schedule Edit Modal -->
     <div id="editScheduleModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -309,7 +257,6 @@ if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate
         </div>
     </div>
     
-    <!-- Add Schedule Modal -->
     <div id="addScheduleModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -326,7 +273,6 @@ if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate
                         <label for="employeeSelect">Pracownik</label>
                         <select id="employeeSelect" name="pracownik_id" required>
                             <option value="">Wybierz pracownika</option>
-                            <!-- Options will be loaded dynamically -->
                         </select>
                     </div>
                     
@@ -366,7 +312,6 @@ if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate
         </div>
     </div>
     
-    <!-- Delete Schedule Modal -->
     <div id="deleteScheduleModal" class="modal">
         <div class="modal-content delete-modal">
             <div class="modal-header delete-header">
@@ -391,55 +336,7 @@ if ($isAjax && isset($_GET['action']) && $_GET['action'] === 'getEmployeesByDate
     </div>
     
     <script src="js/calendar.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const userNameDropdown = document.getElementById('userNameDropdown');
-        const userDropdown = document.getElementById('userDropdown');
-    
-        userNameDropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-            userNameDropdown.classList.toggle('active');
-            userDropdown.classList.toggle('active');
-        });
-        
-        document.addEventListener('click', function(e) {
-            if (!userDropdown.contains(e.target) && e.target !== userNameDropdown) {
-                userNameDropdown.classList.remove('active');
-                userDropdown.classList.remove('active');
-            }
-        });
-        document.getElementById('changePasswordBtn').addEventListener('click', function() {
-            alert('Zmiana hasła - funkcjonalność będzie dostępna wkrótce');
-        });
-        
-        const themeToggle = document.getElementById('themeToggle');
-        const body = document.body;
-        const themeIcon = themeToggle.querySelector('i');
-        
-        const currentTheme = localStorage.getItem('theme') || 'theme-light';
-        body.className = currentTheme;
-        
-        if (currentTheme === 'theme-dark') {
-            themeIcon.className = 'fas fa-moon';
-        } else {
-            themeIcon.className = 'fas fa-sun';
-        }
-        
-
-        themeToggle.addEventListener('click', function() {
-            if (body.classList.contains('theme-dark')) {
-                body.classList.replace('theme-dark', 'theme-light');
-                themeIcon.className = 'fas fa-sun';
-                localStorage.setItem('theme', 'theme-light');
-            } else {
-                body.classList.replace('theme-light', 'theme-dark');
-                themeIcon.className = 'fas fa-moon';
-                localStorage.setItem('theme', 'theme-dark');
-            }
-        });
-        
-    });
-    </script>
+    <script src="js/common.js"></script>
 </body>
 </html>
 <?php $conn->close(); ?>

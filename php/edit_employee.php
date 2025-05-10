@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['user'])) {
-    header("Location: login.html");
+    header("Location: ../login.html");
     exit();
 }
 
@@ -19,7 +19,7 @@ if ($conn->connect_error) {
 $employeeData = null;
 
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    header("Location: manage_employees.php");
+    header("Location: ../manage_employees.php");
     exit();
 }
 
@@ -129,6 +129,6 @@ if ($isAjax) {
     exit();
 }
 
-header("Location: manage_employees.php");
+header("Location: ../manage_employees.php");
 exit();
 ?>

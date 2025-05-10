@@ -141,62 +141,40 @@ $result = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <title>System HR - Wnioski Urlopowe</title>
-    <link rel="stylesheet" href="css/dashboard.css">
-    <link rel="stylesheet" href="css/employees.css">
-    <link rel="stylesheet" href="css/leave.css">
     <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/forms-modals.css">
+    <link rel="stylesheet" href="css/leave.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body class="theme-light">
     <div class="dashboard-container">
-        <div class="sidebar">
-            <div class="logo">
-                <h2>HR System</h2>
-            </div>
-            <div class="menu">
-                <a href="dashboard.php" class="menu-item">
-                    <i class="fas fa-home"></i>
-                    <span>Strona główna</span>
-                </a>
-                <a href="manage_employees.php" class="menu-item">
-                    <i class="fas fa-users"></i>
-                    <span>Zarządzaj pracownikami</span>
-                </a>
-                <a href="manage_time.php" class="menu-item">
-                    <i class="fas fa-clock"></i>
-                    <span>Zarządzaj czasem pracy</span>
-                </a>
-                <a href="manage_leave.php" class="menu-item active">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Wnioski urlopowe</span>
-                </a>
-            </div>
-        </div>
+    <aside class="sidebar">
+        <div class="logo"><h2>HR System</h2></div>
+        <nav class="menu">
+            <a href="dashboard.php" class="menu-item"><i class="fas fa-home"></i><span>Strona główna</span></a>
+            <a href="manage_employees.php" class="menu-item"><i class="fas fa-users"></i><span>Zarządzaj pracownikami</span></a>
+            <a href="manage_time.php" class="menu-item"><i class="fas fa-clock"></i><span>Zarządzaj czasem pracy</span></a>
+            <a href="manage_leave.php" class="menu-item active"><i class="fas fa-calendar-alt"></i><span>Wnioski urlopowe</span></a>
+        </nav>
+    </aside>
         <div class="main-content">
-            <div class="header">
-                <div class="page-title">
-                    <h1>Wnioski urlopowe</h1>
-                </div>
-                <div class="user-info">
-                    <button class="theme-toggle" id="themeToggle" title="Przełącz motyw">
-                        <i class="fas fa-sun"></i>
-                    </button>
-                    <span class="user-name" id="userNameDropdown"><?= htmlspecialchars($_SESSION['user']) ?></span>
-                    <div class="user-dropdown" id="userDropdown">
-                        <button type="button" id="changePasswordBtn">
-                            <i class="fas fa-key"></i> Zmień hasło
-                        </button>
-                        <a href="logout.php">
-                            <i class="fas fa-sign-out-alt"></i> Wyloguj się
-                        </a>
-                    </div>
+        <header class="header">
+            <h1 class="welcome-message">Zarządzaj wnioskami</h1>
+            <div class="user-info">
+                <div class="user-box" id="userToggle">
+                    <i class="fas fa-sun theme-icon" id="themeIcon"></i>
+                    <span class="user-name"> <?= htmlspecialchars($_SESSION['user']) ?> </span>
+                    <i class="fas fa-chevron-down dropdown-icon" id="dropdownToggle"></i>
                     <div class="avatar">
                         <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User Avatar">
                     </div>
                 </div>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href='php/logout.php'><i class="fas fa-sign-out-alt"></i> Wyloguj się</a>
+                </div>
             </div>
+        </header>
             <div class="filter-panel">
                 <form id="filterForm" method="get">
                     <div class="filter-row">
@@ -301,9 +279,7 @@ $result = $conn->query($sql);
             </div>
         </div>
     </div>
-
     <div id="notificationContainer"></div>
-    
     <script src="js/common.js"></script>
     <script src="js/leave.js"></script>
 </body>

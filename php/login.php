@@ -27,10 +27,10 @@ $result = $conn->query($sql);
 
 if ($result->num_rows === 1) {
     $_SESSION['user'] = $username;
-    header("Location: dashboard.php");
+    header("Location: ../dashboard.php");
     exit();
 } else {
-    header("Location: login.html?error=1");
+    header("Location: ../login.html?error=1");
     exit();
 }
 ?>
