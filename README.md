@@ -54,9 +54,6 @@ git clone https://github.com/yourusername/HRDashboard.git /Applications/XAMPP/xa
 3. Create a database named `HRDASHBOARD` in MySQL
 
 4. Import the database schema (located in the `database` folder)
-```
-mysql -u root HRDASHBOARD < database/schema.sql
-```
 
 5. Access the system through your web browser
 ```
@@ -96,7 +93,7 @@ HRDashboard/
 │   ├── update_employee.php # Update employee data
 │   └── ... (other PHP files)
 ├── database/             # Database files
-│   └── schema.sql        # Database schema
+│   └── HRDASHBOARD.sql   # Database schema
 ├── screenshots/          # System screenshots for documentation
 ├── dashboard.php         # Main dashboard page
 ├── login.html            # Login page
